@@ -80,31 +80,6 @@
 <main>
 	<p>Visit the <a href="https://svelte.dev/tutorial">Svelte tutorial</a> to learn how to build Svelte apps.</p>
 	<div class="board">
-		<!--
-		<div class="square"></div> <div class="square"></div> <div class="square"></div> <div class="square"></div>
-		<div class="square"></div> <div class="square"></div> <div class="square"></div> <div class="square"></div>
-
-		<div class="square"></div> <div class="square"></div> <div class="square"></div> <div class="square"></div>
-		<div class="square"></div> <div class="square"></div> <div class="square"></div> <div class="square"></div>
-
-		<div class="square"></div> <div class="square"></div> <div class="square"></div> <div class="square"></div>
-		<div class="square"></div> <div class="square"></div> <div class="square"></div> <div class="square"></div>
-
-		<div class="square"></div> <div class="square"></div> <div class="square"></div> <div class="square"></div>
-		<div class="square"></div> <div class="square"></div> <div class="square"></div> <div class="square"></div>
-
-		<div class="square"></div> <div class="square"></div> <div class="square"></div> <div class="square"></div>
-		<div class="square"></div> <div class="square"></div> <div class="square"></div> <div class="square"></div>
-
-		<div class="square"></div> <div class="square"></div> <div class="square"></div> <div class="square"></div>
-		<div class="square"></div> <div class="square"></div> <div class="square"></div> <div class="square"></div>
-
-		<div class="square"></div> <div class="square"></div> <div class="square"></div> <div class="square"></div>
-		<div class="square"></div> <div class="square"></div> <div class="square"></div> <div class="square"></div>
-
-		<div class="square"></div> <div class="square"></div> <div class="square"></div> <div class="square"></div>
-		<div class="square"></div> <div class="square"></div> <div class="square"></div> <div class="square"></div>-->
-
 		{#each pieceMap as columns}
 			{#each columns as item}
 				<div class="square">
