@@ -1,9 +1,11 @@
 use std::collections::*;
+use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 struct Piece {
     white: bool,
     piecetype: PieceType,
-    position: (usize, usize),
+    position: (u8, u8),
     alive: bool,
 }
 
@@ -18,7 +20,7 @@ impl Default for Piece {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 enum PieceType {
     Pawn,
     Rook,
@@ -28,9 +30,10 @@ enum PieceType {
     King,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct Board {
     pieces: Vec<Piece>,
-    map: BTreeMap<(usize, usize), usize>,
+    map: [[u8; 8]; 8],
 }
 
 impl Default for Board {
@@ -230,16 +233,66 @@ impl Default for Board {
             },
         ];
 
-        let map: BTreeMap<(usize, usize), usize> = pieces
-            .iter()
-            .enumerate()
-            .map(|(i, piece)| (piece.position, i))
-            .collect();
+        let mut map = [[0; 8]; 8];
+        for (i, piece) in pieces.iter().enumerate() {
+            map[piece.position.0 as usize - 1][piece.position.1 as usize - 1] = i as u8;
+        }
 
         Self { pieces, map }
     }
 }
 
-fn main() {
-    println!("Hello, world!")
+#[derive(Debug, Clone, Serialize, Deserialize)]
+enum ServerMessage {
+    BoardState(Board),
+}
+
+use std::{env, io::Error};
+
+use futures::{StreamExt, SinkExt};
+use tokio::net::{TcpListener, TcpStream};
+use tokio_tungstenite::tungstenite::Message;
+
+use tracing::info;
+use tracing_subscriber;
+
+#[tokio::main]
+async fn main() -> Result<(), Error> {
+    tracing_subscriber::fmt()
+        .pretty()
+        .with_thread_names(true)
+        .with_max_level(tracing::Level::DEBUG)
+        .init();
+    let addr = env::args()
+        .nth(1)
+        .unwrap_or_else(|| "127.0.0.1:8080".to_string());
+
+    // Create the event loop and TCP listener we'll accept connections on.
+    let try_socket = TcpListener::bind(&addr).await;
+    let listener = try_socket.expect("Failed to bind");
+    info!("Listening on: {}", addr);
+
+    while let Ok((stream, _)) = listener.accept().await {
+        tokio::spawn(accept_connection(stream));
+    }
+
+    Ok(())
+}
+
+async fn accept_connection(stream: TcpStream) {
+    let addr = stream
+        .peer_addr()
+        .expect("connected streams should have a peer address");
+    info!("Peer address: {}", addr);
+
+    let ws_stream = tokio_tungstenite::accept_async(stream)
+        .await
+        .expect("Error during the websocket handshake occurred");
+
+    info!("New WebSocket connection: {}", addr);
+
+    let (mut write, read) = ws_stream.split();
+    let msg = ServerMessage::BoardState(Board::default());
+    let msg_json = serde_json::to_string(&msg).expect("Could not serialize board");
+    write.send(Message::Text(msg_json)).await.expect("failed to send message");
 }

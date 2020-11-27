@@ -1,6 +1,7 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import RenderPiece from './RenderPiece.svelte';
-	import {PieceType, Piece} from './types';
+	import {PieceType, Piece, piecetype_from_string} from './types';
 
 
 	let boardState = [
@@ -43,6 +44,43 @@
 		}
 		return [piece.piecetype, piece.white];
 	}
+
+	function updateBoardState(boardStateJson: Object) {
+		console.log(boardStateJson);
+		let newBoardState = [];
+		for (var i = 0; i < boardStateJson.pieces.length; ++i) {
+			let json_piece = boardStateJson.pieces[i];
+			let piecetype = piecetype_from_string(json_piece.piecetype);
+
+			let piece = new Piece(json_piece.white, piecetype, json_piece.position, json_piece.alive);
+			newBoardState.push(piece);
+		}
+		boardState = newBoardState;
+		pieceMap = new Array(8).fill(null).map(() => new Array(8).fill(null));
+		boardState.forEach((piece, i) => {
+			pieceMap[8 - piece.position[1]][piece.position[0] - 1] = i;
+		});
+	}
+
+	function handleMessage(message) {
+		console.log("Handling message from the server!");
+		let msg = JSON.parse(message.data);
+		if (msg.hasOwnProperty("BoardState")) {
+			updateBoardState(msg.BoardState);
+		} else {
+			console.error("Unrecognized message from the server!");
+			console.log(message);
+		}
+	}
+
+	let websocket;
+
+	onMount(async () => {
+		let ws = new WebSocket("ws://localhost:8080");
+		ws.onmessage = handleMessage;
+		ws.send("I connected!");
+		websocket = ws;
+	});
 </script>
 
 <!-- shout out to https://codepen.io/jeansarlon/pen/WpZNda for CSS styles -->
