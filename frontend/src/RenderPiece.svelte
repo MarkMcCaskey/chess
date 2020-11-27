@@ -21,18 +21,23 @@
         // TODO: show valid squares that can be moved to (probaly by firing events)
         console.log("STARTED DRAGGING! " + event.dataTransfer.dropEffect);
         event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text", data);
         console.log(event);
     }
 
     function handleDrop(event) {
         // TODO: show valid squares that can be moved to (probaly by firing events)
         console.log("DROPPED!");
+        //event.preventDefault();
+        //var data = event.dataTransfer.getData("text");
+        //console.log(data);
         console.log(event);
     }
 
     function handleDragEnter(event) {
         // TODO: show valid squares that can be moved to (probaly by firing events)
         console.log("DRAG ENTER!");
+        event.dataTransfer.effectAllowed = "move";
         console.log(event);
     }
 
@@ -44,6 +49,8 @@
     .piece {
         display: flex;
         justify-content: center;
+        width: 100%;
+        height: 100%;
     }
     .empty {
         width: 70px;

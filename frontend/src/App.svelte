@@ -58,7 +58,6 @@
  	 	grid-auto-flow: row;
 	}
 	.square {
- 	 	padding: 20px;
  	 	font-size: 150%;
  	 	background-color: #b5915f;
  	 	color: #000;
