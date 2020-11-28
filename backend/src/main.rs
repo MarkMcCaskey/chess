@@ -12,7 +12,7 @@ use tokio_tungstenite::tungstenite::Message;
 use tracing::{debug, info, trace, warn};
 use tracing_subscriber;
 
-use crate::chess::{Board, PieceType};
+use crate::chess::{Board, PieceType, Player};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 enum ServerMessage {
@@ -29,18 +29,6 @@ enum ClientMessage {
         location: (Option<NonZeroU8>, Option<NonZeroU8>),
     },
     Resign,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Player {
-    White,
-    Black,
-}
-
-impl Default for Player {
-    fn default() -> Self {
-        Player::White
-    }
 }
 
 #[derive(Debug, Clone, Default)]
