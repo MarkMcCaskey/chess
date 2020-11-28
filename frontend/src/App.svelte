@@ -73,13 +73,18 @@
 		}
 	}
 
-	let websocket;
-
 	onMount(async () => {
 		let ws = new WebSocket("ws://localhost:8080");
 		ws.onmessage = handleMessage;
-		ws.send("I connected!");
-		websocket = ws;
+		ws.onclose = (msg) => console.log("Web socket closed!" + msg);
+		ws.onopen = (msg) => {
+			console.log("Web socket opened!" + msg);
+			ws.send("\"Connect\"");
+		 };
+		ws.onerror = (msg) => console.error("Web socket closed!" + msg);
+		console.log("Connected to server!");
+		console.log("Connected to server!");
+		window.websocket = ws;
 	});
 </script>
 

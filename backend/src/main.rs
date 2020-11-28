@@ -1,260 +1,48 @@
-use std::collections::*;
+mod chess;
+
+//use futures::{SinkExt, StreamExt};
+use futures_channel::mpsc::{unbounded, UnboundedSender};
+use futures_util::{future, pin_mut, stream::TryStreamExt, StreamExt};
 use serde::{Deserialize, Serialize};
+use std::sync::{Arc, Mutex};
+use std::{env, io::Error};
+use tokio::net::{TcpListener, TcpStream};
+use tokio_tungstenite::tungstenite::Message;
+use tracing::{debug, info, trace, warn};
+use tracing_subscriber;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-struct Piece {
-    white: bool,
-    piecetype: PieceType,
-    position: (u8, u8),
-    alive: bool,
-}
-
-impl Default for Piece {
-    fn default() -> Self {
-        Self {
-            white: false,
-            piecetype: PieceType::Pawn,
-            position: (0, 0),
-            alive: true,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-enum PieceType {
-    Pawn,
-    Rook,
-    Knight,
-    Bishop,
-    Queen,
-    King,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct Board {
-    pieces: Vec<Piece>,
-    map: [[u8; 8]; 8],
-}
-
-impl Default for Board {
-    fn default() -> Self {
-        let pieces = vec![
-            Piece {
-                white: true,
-                piecetype: PieceType::Pawn,
-                position: (1, 2),
-                alive: true,
-            },
-            Piece {
-                white: true,
-                piecetype: PieceType::Pawn,
-                position: (2, 2),
-                alive: true,
-            },
-            Piece {
-                white: true,
-                piecetype: PieceType::Pawn,
-                position: (3, 2),
-                alive: true,
-            },
-            Piece {
-                white: true,
-                piecetype: PieceType::Pawn,
-                position: (4, 2),
-                alive: true,
-            },
-            Piece {
-                white: true,
-                piecetype: PieceType::Pawn,
-                position: (5, 2),
-                alive: true,
-            },
-            Piece {
-                white: true,
-                piecetype: PieceType::Pawn,
-                position: (6, 2),
-                alive: true,
-            },
-            Piece {
-                white: true,
-                piecetype: PieceType::Pawn,
-                position: (7, 2),
-                alive: true,
-            },
-            Piece {
-                white: true,
-                piecetype: PieceType::Pawn,
-                position: (8, 2),
-                alive: true,
-            },
-            Piece {
-                white: false,
-                piecetype: PieceType::Pawn,
-                position: (1, 7),
-                alive: true,
-            },
-            Piece {
-                white: false,
-                piecetype: PieceType::Pawn,
-                position: (2, 7),
-                alive: true,
-            },
-            Piece {
-                white: false,
-                piecetype: PieceType::Pawn,
-                position: (3, 7),
-                alive: true,
-            },
-            Piece {
-                white: false,
-                piecetype: PieceType::Pawn,
-                position: (4, 7),
-                alive: true,
-            },
-            Piece {
-                white: false,
-                piecetype: PieceType::Pawn,
-                position: (5, 7),
-                alive: true,
-            },
-            Piece {
-                white: false,
-                piecetype: PieceType::Pawn,
-                position: (6, 7),
-                alive: true,
-            },
-            Piece {
-                white: false,
-                piecetype: PieceType::Pawn,
-                position: (7, 7),
-                alive: true,
-            },
-            Piece {
-                white: false,
-                piecetype: PieceType::Pawn,
-                position: (8, 7),
-                alive: true,
-            },
-            Piece {
-                white: true,
-                piecetype: PieceType::Rook,
-                position: (1, 1),
-                alive: true,
-            },
-            Piece {
-                white: true,
-                piecetype: PieceType::Rook,
-                position: (8, 1),
-                alive: true,
-            },
-            Piece {
-                white: true,
-                piecetype: PieceType::Knight,
-                position: (2, 1),
-                alive: true,
-            },
-            Piece {
-                white: true,
-                piecetype: PieceType::Knight,
-                position: (7, 1),
-                alive: true,
-            },
-            Piece {
-                white: true,
-                piecetype: PieceType::Bishop,
-                position: (3, 1),
-                alive: true,
-            },
-            Piece {
-                white: true,
-                piecetype: PieceType::Bishop,
-                position: (6, 1),
-                alive: true,
-            },
-            Piece {
-                white: true,
-                piecetype: PieceType::Queen,
-                position: (4, 1),
-                alive: true,
-            },
-            Piece {
-                white: true,
-                piecetype: PieceType::King,
-                position: (5, 1),
-                alive: true,
-            },
-            Piece {
-                white: false,
-                piecetype: PieceType::Rook,
-                position: (1, 8),
-                alive: true,
-            },
-            Piece {
-                white: false,
-                piecetype: PieceType::Rook,
-                position: (8, 8),
-                alive: true,
-            },
-            Piece {
-                white: false,
-                piecetype: PieceType::Knight,
-                position: (2, 8),
-                alive: true,
-            },
-            Piece {
-                white: false,
-                piecetype: PieceType::Knight,
-                position: (7, 8),
-                alive: true,
-            },
-            Piece {
-                white: false,
-                piecetype: PieceType::Bishop,
-                position: (3, 8),
-                alive: true,
-            },
-            Piece {
-                white: false,
-                piecetype: PieceType::Bishop,
-                position: (6, 8),
-                alive: true,
-            },
-            Piece {
-                white: false,
-                piecetype: PieceType::Queen,
-                position: (4, 8),
-                alive: true,
-            },
-            Piece {
-                white: false,
-                piecetype: PieceType::King,
-                position: (5, 8),
-                alive: true,
-            },
-        ];
-
-        let mut map = [[0; 8]; 8];
-        for (i, piece) in pieces.iter().enumerate() {
-            map[piece.position.0 as usize - 1][piece.position.1 as usize - 1] = i as u8;
-        }
-
-        Self { pieces, map }
-    }
-}
+use crate::chess::{Board, PieceType};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 enum ServerMessage {
     BoardState(Board),
+    UnrecognizedMessage(String),
 }
 
-use std::{env, io::Error};
+#[derive(Debug, Clone, Serialize, Deserialize)]
+enum ClientMessage {
+    Connect,
+    MovePiece { piece_index: u8, location: (u8, u8) },
+    Resign,
+}
 
-use futures::{StreamExt, SinkExt};
-use tokio::net::{TcpListener, TcpStream};
-use tokio_tungstenite::tungstenite::Message;
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Player {
+    White,
+    Black,
+}
 
-use tracing::info;
-use tracing_subscriber;
+impl Default for Player {
+    fn default() -> Self {
+        Player::White
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct GameState {
+    board: Board,
+    turn: Player,
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -272,14 +60,17 @@ async fn main() -> Result<(), Error> {
     let listener = try_socket.expect("Failed to bind");
     info!("Listening on: {}", addr);
 
+    let game_state = Arc::new(Mutex::new(GameState::default()));
+
     while let Ok((stream, _)) = listener.accept().await {
-        tokio::spawn(accept_connection(stream));
+        let game_state = game_state.clone();
+        tokio::spawn(async move { accept_connection(stream, game_state) }.await);
     }
 
     Ok(())
 }
 
-async fn accept_connection(stream: TcpStream) {
+async fn accept_connection(stream: TcpStream, game_state: Arc<Mutex<GameState>>) {
     let addr = stream
         .peer_addr()
         .expect("connected streams should have a peer address");
@@ -291,8 +82,62 @@ async fn accept_connection(stream: TcpStream) {
 
     info!("New WebSocket connection: {}", addr);
 
-    let (mut write, read) = ws_stream.split();
-    let msg = ServerMessage::BoardState(Board::default());
-    let msg_json = serde_json::to_string(&msg).expect("Could not serialize board");
-    write.send(Message::Text(msg_json)).await.expect("failed to send message");
+    let (tx, rx) = unbounded();
+    let (write, read) = ws_stream.split();
+    let msg_handler = read.try_for_each(move |client_msg| {
+        debug!("Found client message: {:?}", &client_msg);
+
+        let client_msg: ClientMessage = match client_msg {
+            Message::Text(text) => match serde_json::from_str(&text) {
+                Ok(v) => v,
+                Err(_) => {
+                    todo!("malformed client message!");
+                }
+            },
+            Message::Binary(_) => {
+                warn!("Binary message ignored!");
+                todo!();
+            }
+            Message::Ping(_) => {
+                warn!("Ping message ignored!");
+                todo!();
+            }
+            Message::Pong(_) => {
+                warn!("Pong message ignored!");
+                todo!();
+            }
+            Message::Close(_) => {
+                warn!("Close message ignored!");
+                todo!();
+            }
+        };
+        debug!("Found client message: {:?}", &client_msg);
+
+        let response = match client_msg {
+            ClientMessage::Connect => {
+                let gs = game_state.lock().unwrap();
+                ServerMessage::BoardState(gs.board.clone())
+            }
+            ClientMessage::MovePiece { .. } => todo!("move piece"),
+            ClientMessage::Resign => todo!("resign"),
+        };
+        debug!("Responding with: {:?}", &response);
+        tx.unbounded_send(response).unwrap();
+
+        future::ok(())
+    });
+
+    //let msg_json = serde_json::to_string(&response).expect("Could not serialize message");
+    let receive_from_others = rx
+        .map(|msg| {
+            Ok(Message::Text(
+                serde_json::to_string(&msg).expect("Could not serialize message"),
+            ))
+        })
+        .forward(write);
+
+    pin_mut!(msg_handler, receive_from_others);
+    future::select(msg_handler, receive_from_others).await;
+    
+    info!("{} disconnected", addr);
 }
