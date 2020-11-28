@@ -20,7 +20,7 @@ impl Not for Player {
     fn not(self) -> Self::Output {
         match self {
             Self::White => Self::Black,
-            Self::Black => Self::White
+            Self::Black => Self::White,
         }
     }
 }
@@ -71,9 +71,9 @@ pub struct PieceIter<'a> {
     idx: usize,
 }
 
-impl <'a> Iterator for PieceIter<'a> {
+impl<'a> Iterator for PieceIter<'a> {
     type Item = &'a Piece;
-    fn next (&mut self) -> Option<Self::Item>{
+    fn next(&mut self) -> Option<Self::Item> {
         if self.idx < self.pieces.len() {
             let val = &self.pieces[self.idx];
             self.idx += 1;
@@ -107,12 +107,12 @@ impl Board {
         let piece = self.pieces[piece_idx as usize].clone();
         let pos = (t_idx1, t_idx2);
         let valid_move = match piece.piecetype {
-            PieceType::Pawn     => self.valid_pawn_move(&piece, pos),
-            PieceType::Rook     => self.valid_rook_move(&piece, pos),
-            PieceType::Knight   => self.valid_knight_move(&piece, pos),
-            PieceType::King     => self.valid_king_move(&piece, pos),
-            PieceType::Queen    => self.valid_queen_move(&piece, pos),
-            PieceType::Bishop   => self.valid_bishop_move(&piece, pos)
+            PieceType::Pawn => self.valid_pawn_move(&piece, pos),
+            PieceType::Rook => self.valid_rook_move(&piece, pos),
+            PieceType::Knight => self.valid_knight_move(&piece, pos),
+            PieceType::King => self.valid_king_move(&piece, pos),
+            PieceType::Queen => self.valid_queen_move(&piece, pos),
+            PieceType::Bishop => self.valid_bishop_move(&piece, pos),
         };
 
         if let Some(_target_idx) = self.map[t_idx1][t_idx2] {
@@ -126,50 +126,56 @@ impl Board {
         Ok(())
     }
 
-    fn iter_pieces(&self, player: Player) -> PieceIter{
-        let mid = self.pieces.len()/2;
+    fn iter_pieces(&self, player: Player) -> PieceIter {
+        let mid = self.pieces.len() / 2;
         match player {
-            Player::White => PieceIter{idx: 0, pieces: &self.pieces[..mid]},
-            Player::Black => PieceIter{idx: 0, pieces: &self.pieces[mid..]},
+            Player::White => PieceIter {
+                idx: 0,
+                pieces: &self.pieces[..mid],
+            },
+            Player::Black => PieceIter {
+                idx: 0,
+                pieces: &self.pieces[mid..],
+            },
         }
     }
 
     /// Is player in check?
-    fn is_check(&self, player: Player) -> bool{
+    fn is_check(&self, player: Player) -> bool {
         // Determine if king is about to be captured...
         for piece in self.iter_pieces(!player) {}
 
         false
     }
 
-    fn valid_pawn_move(&self, piece: &Piece, dest: (usize, usize)) -> bool{
+    fn valid_pawn_move(&self, piece: &Piece, dest: (usize, usize)) -> bool {
         // Forward one space
         // Forward two space on first move
         // En Passant
         // Diagonal to capture
         true
     }
-    fn valid_rook_move(&self, piece: &Piece, dest: (usize, usize)) -> bool{
+    fn valid_rook_move(&self, piece: &Piece, dest: (usize, usize)) -> bool {
         // Forward, backward, sideways any number space
         // Castle (when valid)
-        // 
+        //
         true
     }
-    fn valid_knight_move(&self, piece: &Piece, dest: (usize, usize)) -> bool{
+    fn valid_knight_move(&self, piece: &Piece, dest: (usize, usize)) -> bool {
         // Forward 2, side 1
         // (8 possible moves)
         true
     }
-    fn valid_king_move(&self, piece: &Piece, dest: (usize, usize)) -> bool{
+    fn valid_king_move(&self, piece: &Piece, dest: (usize, usize)) -> bool {
         // One space any direction
         // Castle (when valid)
         true
     }
-    fn valid_queen_move(&self, piece: &Piece, dest: (usize, usize)) -> bool{
+    fn valid_queen_move(&self, piece: &Piece, dest: (usize, usize)) -> bool {
         // Forward, backward, sideways, and diagonally any number space
         true
     }
-    fn valid_bishop_move(&self, piece: &Piece, dest: (usize, usize)) -> bool{
+    fn valid_bishop_move(&self, piece: &Piece, dest: (usize, usize)) -> bool {
         // Diagonally any number space
         true
     }
