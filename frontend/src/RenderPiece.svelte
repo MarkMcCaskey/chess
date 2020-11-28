@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { createEventDispatcher } from 'svelte';
     import {PieceType, Piece} from './types';
 
     function map_piece_type_to_svg(piecetype: PieceType, white: boolean): string {
@@ -17,21 +18,34 @@
         }
     }
 
+    function movePiece(src_loc: [number, number], dest_loc: [number, number]) {
+	    dispatch('pieceMove', {
+            src_loc: src_loc,
+            dest_loc: dest_loc,
+		});
+    }
+
     function handleDragStart(event) {
         // TODO: show valid squares that can be moved to (probaly by firing events)
         console.log("STARTED DRAGGING! " + event.dataTransfer.dropEffect);
         event.dataTransfer.effectAllowed = "move";
-        event.dataTransfer.setData("text", data);
+        event.dataTransfer.setData("text", JSON.stringify(data.position));
         console.log(event);
+    }
+
+    function handleDragOver(event) {
+         console.log("dragOver");
+        event.preventDefault();
     }
 
     function handleDrop(event) {
         // TODO: show valid squares that can be moved to (probaly by firing events)
-        console.log("DROPPED!");
-        //event.preventDefault();
-        //var data = event.dataTransfer.getData("text");
-        //console.log(data);
+        console.log("DROPPED at " + x + ", " + y + "!");
+        event.preventDefault();
+        var data: [number, number] = JSON.parse(event.dataTransfer.getData("text"));
+        console.log(data);
         console.log(event);
+        movePiece(data, [x, y]);
     }
 
     function handleDragEnter(event) {
@@ -41,8 +55,11 @@
         console.log(event);
     }
 
+    const dispatch = createEventDispatcher();
 
-    export let data: [PieceType, boolean];
+    export let data: Piece;
+    export let x: number;
+    export let y: number;
 </script>
 
 <style>
@@ -59,10 +76,10 @@
 </style>
 
 <main>
-    <div class="empty" on:dragenter={handleDragEnter}>
+    <div class="empty" on:dragenter={handleDragEnter} on:drop={handleDrop} on:dragover={handleDragOver}>
         {#if data != null}
-        <div class="piece" on:dragstart={handleDragStart} on:drop={handleDrop}>
-            <img src="assets/{map_piece_type_to_svg(data[0], data[1])}" alt="TODO">
+        <div class="piece" on:dragstart={handleDragStart} draggable="true">
+            <img src="assets/{map_piece_type_to_svg(data.piecetype, data.white)}" alt="TODO">
         </div>
         {/if}
     </div>

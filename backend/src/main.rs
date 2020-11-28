@@ -4,6 +4,7 @@ mod chess;
 use futures_channel::mpsc::{unbounded, UnboundedSender};
 use futures_util::{future, pin_mut, stream::TryStreamExt, StreamExt};
 use serde::{Deserialize, Serialize};
+use std::num::NonZeroU8;
 use std::sync::{Arc, Mutex};
 use std::{env, io::Error};
 use tokio::net::{TcpListener, TcpStream};
@@ -16,13 +17,17 @@ use crate::chess::{Board, PieceType};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 enum ServerMessage {
     BoardState(Board),
+    IllegalMove(String),
     UnrecognizedMessage(String),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 enum ClientMessage {
     Connect,
-    MovePiece { piece_index: u8, location: (u8, u8) },
+    MovePiece {
+        prev_location: (Option<NonZeroU8>, Option<NonZeroU8>),
+        location: (Option<NonZeroU8>, Option<NonZeroU8>),
+    },
     Resign,
 }
 
@@ -118,8 +123,18 @@ async fn accept_connection(stream: TcpStream, game_state: Arc<Mutex<GameState>>)
                 let gs = game_state.lock().unwrap();
                 ServerMessage::BoardState(gs.board.clone())
             }
-            ClientMessage::MovePiece { .. } => todo!("move piece"),
+            ClientMessage::MovePiece {
+                prev_location: (Some(prev_l1), Some(prev_l2)),
+                location: (Some(l1), Some(l2)),
+            } => {
+                let mut gs = game_state.lock().unwrap();
+                match gs.board.move_piece((prev_l1, prev_l2), (l1, l2)) {
+                    Ok(()) => ServerMessage::BoardState(gs.board.clone()),
+                    Err(_e) => ServerMessage::IllegalMove("You can't do that!".to_string()),
+                }
+            }
             ClientMessage::Resign => todo!("resign"),
+            _ => todo!("Unrecognized message"),
         };
         debug!("Responding with: {:?}", &response);
         tx.unbounded_send(response).unwrap();
@@ -138,6 +153,6 @@ async fn accept_connection(stream: TcpStream, game_state: Arc<Mutex<GameState>>)
 
     pin_mut!(msg_handler, receive_from_others);
     future::select(msg_handler, receive_from_others).await;
-    
+
     info!("{} disconnected", addr);
 }

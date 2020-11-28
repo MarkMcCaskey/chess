@@ -29,12 +29,12 @@
 	// map from board position x, y to index in boardState
 	let pieceMap = new Array(8).fill(null).map(() => new Array(8).fill(null));
 	boardState.forEach((piece, i) => {
-		pieceMap[8 - piece.position[1]][piece.position[0] - 1] = i;
+		pieceMap[8 - piece.position[1]][piece.position[0] - 1] = i + 1;
 	});
 	function get_piece_at(x: number, y: number): number {
 		return pieceMap[x][y];
 	}
-	function get_piece_to_render(boardStateIndex: number): [PieceType, boolean] {
+	function get_piece_to_render(boardStateIndex: number): Piece {
 		let piece = boardState[boardStateIndex];
 		if (typeof piece == 'undefined') {
 			return null;
@@ -42,7 +42,7 @@
 		if (!piece.alive) {
 			return null;
 		}
-		return [piece.piecetype, piece.white];
+		return piece;
 	}
 
 	function updateBoardState(boardStateJson: Object) {
@@ -71,6 +71,15 @@
 			console.error("Unrecognized message from the server!");
 			console.log(message);
 		}
+	}
+
+	function handlePieceMove(message) {
+		console.log("Handling piece move: " + message);
+		let msg = JSON.stringify({"MovePiece": {
+					"prev_location": message.detail.src_loc,
+					"location": message.detail.dest_loc
+				}});
+		window.websocket.send(msg);
 	}
 
 	onMount(async () => {
@@ -122,10 +131,10 @@
 <main>
 	<p>Visit the <a href="https://svelte.dev/tutorial">Svelte tutorial</a> to learn how to build Svelte apps.</p>
 	<div class="board">
-		{#each pieceMap as columns}
-			{#each columns as item}
+		{#each pieceMap as columns, i}
+			{#each columns as item, j}
 				<div class="square">
-					<RenderPiece data={get_piece_to_render(item)} />
+					<RenderPiece data={get_piece_to_render(item)} y={7-i + 1} x={j + 1} on:pieceMove={handlePieceMove} />
 				</div>
 			{/each}
 		{/each}
