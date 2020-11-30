@@ -58,7 +58,9 @@
 		boardState = newBoardState;
 		pieceMap = new Array(8).fill(null).map(() => new Array(8).fill(null));
 		boardState.forEach((piece, i) => {
-			pieceMap[8 - piece.position[1]][piece.position[0] - 1] = i;
+			if (piece.position != null) {
+				pieceMap[8 - piece.position[1]][piece.position[0] - 1] = i;
+			}
 		});
 	}
 
