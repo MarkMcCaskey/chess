@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-frontend:
     name: Build Frontend
     runs-on: ubuntu-latest
     steps:
@@ -25,7 +25,11 @@ jobs:
         port: ${{ secrets.PORT }}
         source: "frontend/public/*"
         target: "/data/www/chess"
-
+    
+  build-backend:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
     - name: Install Rust
       uses: actions-rs/toolchain@v1
       with:
@@ -42,5 +46,5 @@ jobs:
         username: ${{ secrets.USERNAME }}
         password: ${{ secrets.PASSWORD }}
         port: ${{ secrets.PORT }}
-        source: "backend/target/release/backend"
+        source: "backend/target/release/chess-server"
         target: "~/"

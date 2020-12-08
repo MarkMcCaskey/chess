@@ -1,5 +1,5 @@
 [package]
-name = "backend"
+name = "chess-server"
 version = "0.1.0"
 authors = ["Mark McCaskey and Brad Boccuzzi"]
 edition = "2018"
