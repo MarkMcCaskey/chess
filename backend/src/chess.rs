@@ -198,7 +198,7 @@ impl Board {
         }
     }
 
-    fn valid_pawn_move(&self, piece: &Piece, (x, y): (usize, usize)) -> bool {
+    fn valid_pawn_move(&self, piece: &Piece, (target_x, target_y): (usize, usize)) -> bool {
         // TODO: write test cases...
         // Forward one space - done
         // Forward two space on first move - done
@@ -209,28 +209,35 @@ impl Board {
         let p_x = pos.0.get() as usize - 1;
         let p_y = pos.1.get() as usize - 1;
         let correct_y_move = match piece.color() {
-            Player::White => p_y + 1 == y || (if !piece.moved { p_y + 2 == y } else { false }),
-            Player::Black => {
-                (p_y as isize - 1) == y as isize
+            Player::White => {
+                p_y + 1 == target_y
                     || (if !piece.moved {
-                        (p_y as isize - 2) == y as isize
+                        p_y + 2 == target_y
+                    } else {
+                        false
+                    })
+            }
+            Player::Black => {
+                (p_y as isize - 1) == target_y as isize
+                    || (if !piece.moved {
+                        (p_y as isize - 2) == target_y as isize
                     } else {
                         false
                     })
             }
         };
-        match self.get_location((x, y)) {
+        match self.get_location((target_x, target_y)) {
             BoardSlot::OutOfBounds => {
                 return false;
             }
             BoardSlot::Empty => {
-                return p_x == x && correct_y_move;
+                return p_x == target_x && correct_y_move;
             }
             BoardSlot::Piece(target_piece) => {
                 if target_piece.color() == piece.color() {
                     return false;
                 }
-                let x_diff = ((x as isize) - (p_x as isize)).abs();
+                let x_diff = ((target_x as isize) - (p_x as isize)).abs();
 
                 return x_diff == 1 && correct_y_move;
             }
@@ -238,28 +245,155 @@ impl Board {
 
         true
     }
-    fn valid_rook_move(&self, piece: &Piece, dest: (usize, usize)) -> bool {
-        // Forward, backward, sideways any number space
-        // Castle (when valid)
-        //
+    fn valid_rook_move(&self, piece: &Piece, (target_x, target_y): (usize, usize)) -> bool {
+        // Forward, backward, sideways any number space - DONE
+        // Castle (when valid) - TODO
+        let pos = piece.position.unwrap();
+        let p_x = pos.0.get() as usize - 1;
+        let p_y = pos.1.get() as usize - 1;
+        let only_moved_in_one_axis =
+            (p_x == target_x && p_y != target_y) || (p_x != target_x && p_y == target_y);
+        if !only_moved_in_one_axis {
+            return false;
+        }
+
+        match self.get_location((target_x, target_y)) {
+            BoardSlot::OutOfBounds => {
+                return false;
+            }
+            BoardSlot::Empty => {
+                return true;
+            }
+            BoardSlot::Piece(target_piece) => {
+                if target_piece.color() == piece.color() {
+                    return false;
+                }
+
+                return true;
+            }
+        }
+
         true
     }
-    fn valid_knight_move(&self, piece: &Piece, dest: (usize, usize)) -> bool {
+    fn valid_knight_move(&self, piece: &Piece, (target_x, target_y): (usize, usize)) -> bool {
         // Forward 2, side 1
         // (8 possible moves)
+        let pos = piece.position.unwrap();
+        let p_x = pos.0.get() as usize - 1;
+        let p_y = pos.1.get() as usize - 1;
+        let x_diff = (p_x as isize - target_x as isize).abs();
+        let y_diff = (p_y as isize - target_y as isize).abs();
+        let valid_knight_move = (x_diff == 2 && y_diff == 1) || (x_diff == 1 && y_diff == 2);
+        if !valid_knight_move {
+            return false;
+        }
+
+        match self.get_location((target_x, target_y)) {
+            BoardSlot::OutOfBounds => {
+                return false;
+            }
+            BoardSlot::Empty => {
+                return true;
+            }
+            BoardSlot::Piece(target_piece) => {
+                if target_piece.color() == piece.color() {
+                    return false;
+                }
+
+                return true;
+            }
+        }
         true
     }
-    fn valid_king_move(&self, piece: &Piece, dest: (usize, usize)) -> bool {
+    fn valid_king_move(&self, piece: &Piece, (target_x, target_y): (usize, usize)) -> bool {
         // One space any direction
         // Castle (when valid)
+        let pos = piece.position.unwrap();
+        let p_x = pos.0.get() as usize - 1;
+        let p_y = pos.1.get() as usize - 1;
+        let x_diff = (p_x as isize - target_x as isize).abs();
+        let y_diff = (p_y as isize - target_y as isize).abs();
+        let only_moved_1_square = x_diff + y_diff == 1;
+        if !only_moved_1_square {
+            return false;
+        }
+
+        match self.get_location((target_x, target_y)) {
+            BoardSlot::OutOfBounds => {
+                return false;
+            }
+            BoardSlot::Empty => {
+                return true;
+            }
+            BoardSlot::Piece(target_piece) => {
+                if target_piece.color() == piece.color() {
+                    return false;
+                }
+
+                return true;
+            }
+        }
         true
     }
-    fn valid_queen_move(&self, piece: &Piece, dest: (usize, usize)) -> bool {
+    fn valid_queen_move(&self, piece: &Piece, (target_x, target_y): (usize, usize)) -> bool {
         // Forward, backward, sideways, and diagonally any number space
+        let pos = piece.position.unwrap();
+        let p_x = pos.0.get() as usize - 1;
+        let p_y = pos.1.get() as usize - 1;
+        let x_diff = (p_x as isize - target_x as isize).abs();
+        let y_diff = (p_y as isize - target_y as isize).abs();
+        let moved_diagonally = x_diff == y_diff;
+        let moved_diagonally = x_diff == y_diff;
+        let only_moved_in_one_axis =
+            (p_x == target_x && p_y != target_y) || (p_x != target_x && p_y == target_y);
+        if !(moved_diagonally || only_moved_in_one_axis) {
+            return false;
+        }
+
+        match self.get_location((target_x, target_y)) {
+            BoardSlot::OutOfBounds => {
+                return false;
+            }
+            BoardSlot::Empty => {
+                return true;
+            }
+            BoardSlot::Piece(target_piece) => {
+                if target_piece.color() == piece.color() {
+                    return false;
+                }
+
+                return true;
+            }
+        }
         true
     }
-    fn valid_bishop_move(&self, piece: &Piece, dest: (usize, usize)) -> bool {
+    fn valid_bishop_move(&self, piece: &Piece, (target_x, target_y): (usize, usize)) -> bool {
         // Diagonally any number space
+        let pos = piece.position.unwrap();
+        let p_x = pos.0.get() as usize - 1;
+        let p_y = pos.1.get() as usize - 1;
+        let x_diff = (p_x as isize - target_x as isize).abs();
+        let y_diff = (p_y as isize - target_y as isize).abs();
+        let moved_diagonally = x_diff == y_diff;
+        if !moved_diagonally {
+            return false;
+        }
+
+        match self.get_location((target_x, target_y)) {
+            BoardSlot::OutOfBounds => {
+                return false;
+            }
+            BoardSlot::Empty => {
+                return true;
+            }
+            BoardSlot::Piece(target_piece) => {
+                if target_piece.color() == piece.color() {
+                    return false;
+                }
+
+                return true;
+            }
+        }
         true
     }
 }
