@@ -309,6 +309,30 @@ impl Board {
             return false;
         }
 
+        if p_x == target_x {
+            let range = if p_y > target_y {
+                (target_y + 1)..p_y
+            } else {
+                (p_y + 1)..target_y
+            };
+            for y in range {
+                if self.map[p_x][y].is_some() {
+                    return false;
+                }
+            }
+        } else {
+            let range = if p_x > target_x {
+                (target_x + 1)..p_x
+            } else {
+                (p_x + 1)..target_x
+            };
+            for x in range {
+                if self.map[x][p_y].is_some() {
+                    return false;
+                }
+            }
+        }
+
         match self.get_location((target_x, target_y)) {
             BoardSlot::OutOfBounds => {
                 return false;
@@ -398,6 +422,42 @@ impl Board {
             return false;
         }
 
+        if p_x == target_x {
+            let range = if p_y > target_y {
+                (target_y + 1)..p_y
+            } else {
+                (p_y + 1)..target_y
+            };
+            for y in range {
+                if self.map[p_x][y].is_some() {
+                    return false;
+                }
+            }
+        } else if p_y == target_y {
+            let range = if p_x > target_x {
+                (target_x + 1)..p_x
+            } else {
+                (p_x + 1)..target_x
+            };
+            for x in range {
+                if self.map[x][p_y].is_some() {
+                    return false;
+                }
+            }
+        } else {
+            #[rustfmt::skip]
+        let x_op = if p_x > target_x { std::ops::Sub::sub } else { std::ops::Add::add };
+            #[rustfmt::skip]
+        let y_op = if p_y > target_y { std::ops::Sub::sub } else { std::ops::Add::add };
+            let num_squares = (p_x as isize - target_x as isize).abs() as usize;
+            let range = (1..num_squares).map(|i| (x_op(p_x, i), y_op(p_y, i)));
+            for (x, y) in range {
+                if self.map[x][y].is_some() {
+                    return false;
+                }
+            }
+        }
+
         match self.get_location((target_x, target_y)) {
             BoardSlot::OutOfBounds => {
                 return false;
@@ -424,6 +484,18 @@ impl Board {
         let moved_diagonally = x_diff == y_diff;
         if !moved_diagonally {
             return false;
+        }
+
+        #[rustfmt::skip]
+        let x_op = if p_x > target_x { std::ops::Sub::sub } else { std::ops::Add::add };
+        #[rustfmt::skip]
+        let y_op = if p_y > target_y { std::ops::Sub::sub } else { std::ops::Add::add };
+        let num_squares = (p_x as isize - target_x as isize).abs() as usize;
+        let range = (1..num_squares).map(|i| (x_op(p_x, i), y_op(p_y, i)));
+        for (x, y) in range {
+            if self.map[x][y].is_some() {
+                return false;
+            }
         }
 
         match self.get_location((target_x, target_y)) {
