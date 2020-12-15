@@ -116,9 +116,13 @@ async fn accept_connection(stream: TcpStream, game_state: Arc<Mutex<GameState>>)
                 location: (Some(l1), Some(l2)),
             } => {
                 let mut gs = game_state.lock().unwrap();
-                match gs.board.move_piece((prev_l1, prev_l2), (l1, l2)) {
-                    Ok(()) => ServerMessage::BoardState(gs.board.clone()),
-                    Err(_e) => ServerMessage::IllegalMove("You can't do that!".to_string()),
+                let turn = gs.turn;
+                match gs.board.move_piece(turn, (prev_l1, prev_l2), (l1, l2)) {
+                    Ok(()) => {
+                        gs.turn = !gs.turn;
+                        ServerMessage::BoardState(gs.board.clone())
+                    }
+                    Err(e) => ServerMessage::IllegalMove(format!("You can't do that! {:?}", e)),
                 }
             }
             ClientMessage::Resign => todo!("resign"),
