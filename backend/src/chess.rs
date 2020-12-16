@@ -415,7 +415,6 @@ impl Board {
         let x_diff = (p_x as isize - target_x as isize).abs();
         let y_diff = (p_y as isize - target_y as isize).abs();
         let moved_diagonally = x_diff == y_diff;
-        let moved_diagonally = x_diff == y_diff;
         let only_moved_in_one_axis =
             (p_x == target_x && p_y != target_y) || (p_x != target_x && p_y == target_y);
         if !(moved_diagonally || only_moved_in_one_axis) {

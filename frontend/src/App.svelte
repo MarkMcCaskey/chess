@@ -10,16 +10,16 @@
 		new Piece(true, PieceType.Pawn,    [3, 2]), new Piece(true, PieceType.Pawn,    [4, 2]),
 		new Piece(true, PieceType.Pawn,    [5, 2]), new Piece(true, PieceType.Pawn,    [6, 2]),
 		new Piece(true, PieceType.Pawn,    [7, 2]), new Piece(true, PieceType.Pawn,    [8, 2]),
-		// set up black's pawns
-		new Piece(false, PieceType.Pawn,   [1, 7]), new Piece(false, PieceType.Pawn,   [2, 7]),
-		new Piece(false, PieceType.Pawn,   [3, 7]), new Piece(false, PieceType.Pawn,   [4, 7]),
-		new Piece(false, PieceType.Pawn,   [5, 7]), new Piece(false, PieceType.Pawn,   [6, 7]),
-		new Piece(false, PieceType.Pawn,   [7, 7]), new Piece(false, PieceType.Pawn,   [8, 7]),
 		// set up white's back row
 		new Piece(true, PieceType.Rook,    [1, 1]), new Piece(true, PieceType.Rook,    [8, 1]),
 		new Piece(true, PieceType.Knight,  [2, 1]), new Piece(true, PieceType.Knight,  [7, 1]),
 		new Piece(true, PieceType.Bishop,  [3, 1]), new Piece(true, PieceType.Bishop,  [6, 1]),
 		new Piece(true, PieceType.Queen,   [4, 1]), new Piece(true, PieceType.King,    [5, 1]),
+		// set up black's pawns
+		new Piece(false, PieceType.Pawn,   [1, 7]), new Piece(false, PieceType.Pawn,   [2, 7]),
+		new Piece(false, PieceType.Pawn,   [3, 7]), new Piece(false, PieceType.Pawn,   [4, 7]),
+		new Piece(false, PieceType.Pawn,   [5, 7]), new Piece(false, PieceType.Pawn,   [6, 7]),
+		new Piece(false, PieceType.Pawn,   [7, 7]), new Piece(false, PieceType.Pawn,   [8, 7]),
 		// set up blacks's back row
 		new Piece(false, PieceType.Rook,   [1, 8]), new Piece(false, PieceType.Rook,   [8, 8]),
 		new Piece(false, PieceType.Knight, [2, 8]), new Piece(false, PieceType.Knight, [7, 8]),
@@ -65,9 +65,12 @@
 	}
 
 	function handleMessage(message) {
-		console.log("Handling message from the server!");
+		console.log("Handling message from the server! " + message);
 		let msg = JSON.parse(message.data);
-		if (msg.hasOwnProperty("BoardState")) {
+		if (msg.hasOwnProperty("Welcome")) {
+			window.player_id = msg.Welcome.id_token;
+			console.log("Player ID: " + window.player_id);
+		} else if (msg.hasOwnProperty("BoardState")) {
 			updateBoardState(msg.BoardState);
 		} else {
 			console.error("Unrecognized message from the server!");
@@ -78,9 +81,11 @@
 	function handlePieceMove(message) {
 		console.log("Handling piece move: " + message);
 		let msg = JSON.stringify({"MovePiece": {
+					"id_token": window.player_id,
 					"prev_location": message.detail.src_loc,
 					"location": message.detail.dest_loc
 				}});
+				console.log("Sending message: " + msg);
 		window.websocket.send(msg);
 	}
 
